@@ -1,7 +1,8 @@
 # B-DNS Blockchain  
 
-B-DNS is a blockchain-based decentralized DNS system using a **Proof-of-Stake (PoS)** consensus mechanism. It stores domain records as transactions in an immutable ledger,  maintaining security and decentralization.  
+BloQDNS is a blockchain-based decentralized DNS system using a **Proof-of-Stake (PoS)** consensus mechanism.  It stores domain records as transactions in an immutable ledger,  maintaining security and decentralization. 
 
+Here an on-chain index structure based on adaptive radix tree is used to optimize query resolution.
 ## Instructions
 
 ### Dependencies
@@ -12,7 +13,8 @@ Before running the project, ensure all dependencies are installed by executing:
 
 ### Run Program
    ```sh
-   go run main.go
+   cd benchmark
+   go test -bench=.
    ```
 
 ### Run Simulation

@@ -17,17 +17,17 @@ func InitFilter() *BloomFilterManager {
 }
 
 func (bfm *BloomFilterManager) AddToValidList(validDomain string) {
-	bfm.validFilter.AddString(HashDomain(validDomain))
+	bfm.validFilter.AddString(validDomain)
 }
 
 func (bfm *BloomFilterManager) AddToRevocationList(revokedDomain string) {
-	bfm.revocationFilter.AddString(HashDomain(revokedDomain))
+	bfm.revocationFilter.AddString(revokedDomain)
 }
 
 func (bfm *BloomFilterManager) IsValid(domain string) bool {
-	return bfm.validFilter.TestString(HashDomain(domain))
+	return bfm.validFilter.TestString(domain)
 }
 
 func (bfm *BloomFilterManager) IsRevoked(domain string) bool {
-	return bfm.revocationFilter.TestString(HashDomain(domain))
+	return bfm.revocationFilter.TestString(domain)
 }

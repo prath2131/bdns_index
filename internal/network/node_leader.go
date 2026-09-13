@@ -26,7 +26,12 @@ func (n *Node) GetSlotLeader(epoch int64) []byte {
 		latestBlock := n.Blockchain.GetLatestBlock()
 		n.BcMutex.Unlock()
 
-		slotLeader = consensus.GetSlotLeaderUtil(n.RegistryKeys, latestBlock.StakeData, n.EpochRandoms[epoch])
+		// Handle case where genesis block hasn't been created yet
+		if latestBlock == nil {
+			slotLeader = consensus.GetSlotLeaderUtil(n.RegistryKeys, nil, n.EpochRandoms[epoch])
+		} else {
+			slotLeader = consensus.GetSlotLeaderUtil(n.RegistryKeys, latestBlock.StakeData, n.EpochRandoms[epoch])
+		}
 	}
 
 	n.SlotLeaders[epoch] = slotLeader

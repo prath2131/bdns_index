@@ -9,14 +9,16 @@ import (
 
 // revive:disable-next-line
 type IndexManager struct {
-	tree         *AVLTree
+	tree *ARTTree
+	//tree         *AVLTree
 	filter       *BloomFilterManager
 	currentIndex int64
 }
 
 func NewIndexManager() *IndexManager {
 	return &IndexManager{
-		tree:         &AVLTree{nil},
+		tree: &ARTTree{&ARTNode{}},
+		//tree:         &AVLTree{nil},
 		filter:       InitFilter(),
 		currentIndex: 0, // Corresponds to genesis block
 	}
@@ -25,32 +27,39 @@ func NewIndexManager() *IndexManager {
 func (im *IndexManager) GetIP(domain string) *blockchain.Transaction {
 	// Check if the domain is valid
 	if !im.filter.IsValid(domain) {
+		//fmt.Printf("Domain %s is not valid.\n", domain)
 		return nil
 	}
 
-	targetNode := im.tree.Search(HashDomain(domain))
-	if targetNode == nil {
+	targetNode, found := im.tree.Search(reverseDomain([]byte(domain)))
+	if !found {
+		//targetNode := im.tree.Search(HashDomain(domain))
+		//if targetNode == nil {
+		//fmt.Printf("Domain %s not found in ART tree.\n", domain)
 		return nil
 	}
 
-	return targetNode.value
+	return targetNode
 }
 
-func (im *IndexManager) GetIndexHash() []byte {
-	return ComputeIndexNodeHash(im.tree.root)
-}
+//func (im *IndexManager) GetIndexHash() []byte {
+//return ComputeIndexNodeHash(im.tree.root)
+//}
 
 func (im *IndexManager) Add(domain string, tx *blockchain.Transaction) {
-	im.tree.Add(HashDomain(domain), tx)
+	im.tree.Add(reverseDomain([]byte(domain)), tx)
+	//im.tree.Add(HashDomain(domain), tx)
 	im.filter.AddToValidList(domain)
 }
 
 func (im *IndexManager) Update(domain string, tx *blockchain.Transaction) {
-	im.tree.Update(HashDomain(domain), tx)
+	im.tree.Update(reverseDomain([]byte(domain)), tx)
+	//im.tree.Update(HashDomain(domain), tx)
 }
 
 func (im *IndexManager) Remove(domain string) {
-	im.tree.Remove(HashDomain(domain))
+	im.tree.Remove(reverseDomain([]byte(domain)))
+	//im.tree.Remove(HashDomain(domain))
 	im.filter.AddToRevocationList(domain)
 }
 

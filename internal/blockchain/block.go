@@ -7,6 +7,7 @@ import (
 	"crypto/sha256"
 	"encoding/gob"
 	"encoding/hex"
+	"io"
 	"log"
 	"math/big"
 	"sort"
@@ -152,7 +153,10 @@ func (b *Block) SerializeForSigning() []byte {
 	return hash[:]
 }
 
-func NewGenesisBlock(slotLeader []byte, privateKey *ecdsa.PrivateKey, registryKeys [][]byte, randomness []byte) *Block {
+// NewGenesisBlockAtTime creates a genesis block with an explicit timestamp.
+// Using an explicit timestamp avoids epoch-mismatch across nodes during genesis
+// validation (e.g., when nodes compute epoch = (Timestamp - InitialTimestamp)/...).
+func NewGenesisBlockAtTime(slotLeader []byte, privateKey *ecdsa.PrivateKey, registryKeys [][]byte, randomness []byte, timestamp int64) *Block {
 	stakeData := make(map[string]int)
 	n := len(registryKeys)
 	if n == 0 {
@@ -166,7 +170,7 @@ func NewGenesisBlock(slotLeader []byte, privateKey *ecdsa.PrivateKey, registryKe
 
 	genesisBlock := Block{
 		Index:          0,
-		Timestamp:      time.Now().Unix(),
+		Timestamp:      timestamp,
 		SlotLeader:     slotLeader,
 		Signature:      []byte{},
 		IndexHash:      []byte{},
@@ -181,6 +185,12 @@ func NewGenesisBlock(slotLeader []byte, privateKey *ecdsa.PrivateKey, registryKe
 	genesisBlock.Hash = genesisBlock.ComputeHash()
 
 	return &genesisBlock
+}
+
+// NewGenesisBlock creates a genesis block using the current wall-clock time.
+// Prefer NewGenesisBlockAtTime in simulations/benchmarks to make genesis deterministic.
+func NewGenesisBlock(slotLeader []byte, privateKey *ecdsa.PrivateKey, registryKeys [][]byte, randomness []byte) *Block {
+	return NewGenesisBlockAtTime(slotLeader, privateKey, registryKeys, randomness, time.Now().Unix())
 }
 
 func (b *Block) ComputeHash() []byte {
@@ -230,11 +240,14 @@ func (b *Block) Serialize() []byte {
 
 func DeserializeBlock(d []byte) *Block {
 	var block Block
-
 	decoder := gob.NewDecoder(bytes.NewReader(d))
 	err := decoder.Decode(&block)
 	if err != nil {
-		log.Panic(err)
+		if err == io.EOF {
+			return nil
+		} else {
+			log.Panic(err)
+		}
 	}
 
 	return &block

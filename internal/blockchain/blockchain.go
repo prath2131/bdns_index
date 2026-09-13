@@ -3,9 +3,10 @@ package blockchain
 import (
 	"errors"
 	"fmt"
-	"github.com/boltdb/bolt"
 	"log"
 	"os"
+
+	"github.com/boltdb/bolt"
 )
 
 const dbFile = "chaindata/blockchain_%s.db"
@@ -153,14 +154,27 @@ func (bc *Blockchain) GetBestHeight() int {
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
+		if b == nil {
+			return nil
+		}
+
 		lastHash := b.Get([]byte("l"))
+		if lastHash == nil {
+			return nil
+		}
+
 		blockData := b.Get(lastHash)
+		if blockData == nil {
+			return nil
+		}
+
 		lastBlock = *DeserializeBlock(blockData)
 
 		return nil
 	})
 	if err != nil {
-		log.Panic(err)
+		// Return 0 if database is closed or has errors
+		return 0
 	}
 
 	return int(lastBlock.Index)
@@ -213,14 +227,30 @@ func (bc *Blockchain) GetLatestBlock() *Block {
 
 	err := bc.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
+		if b == nil {
+			return nil
+		}
+
 		lastHash := b.Get([]byte("l"))
+
+		// Handle case when no blocks exist yet
+		if lastHash == nil {
+			return nil
+		}
+
 		blockData := b.Get(lastHash)
+		if blockData == nil {
+			return nil
+		}
+
 		block = DeserializeBlock(blockData)
 
 		return nil
 	})
 	if err != nil {
-		log.Panic(err)
+		// Silently return nil if database is closed or has errors
+		// This prevents panics during shutdown
+		return nil
 	}
 
 	return block
